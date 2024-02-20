@@ -37,7 +37,7 @@ echo "Homo_sapiens_Ancestor_GRCh38 FASTA" > header.txt
 cat *.fa > fastas.fa
 cat header.txt fastas.fa > homo_sapiens_ancestor_GRCh38.fa
 
-# rehead, rename, bgzip, and index FASTA
+# rehead and rename FASTA
 awk 'NR==FNR{A[$1]=$2; next} NF==2{$2=A[$2]; print ">" $2; next} 1' FS='\t' ../../rename_ancestral_GRCh38_seqs.txt FS='>' homo_sapiens_ancestor_GRCh38.fa | tail -n +2 > rehead_homo_sapiens_ancestor_GRCh38.fa
 mv rehead_homo_sapiens_ancestor_GRCh38.fa homo_sapiens_ancestor_GRCh38.fa
 mv homo_sapiens_ancestor_GRCh38.fa ../../

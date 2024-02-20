@@ -7,11 +7,13 @@ The DAF is calculated for sites where the ancestral allele is not missing or amb
 python3 annotate_DAFs.py --fasta input.fa --vcf input.vcf --out out.vcf
 ```
 
-The annotation script uses two libraries: [pysam](https://pysam.readthedocs.io/en/latest/api.html) and [vcfpy](https://vcfpy.readthedocs.io/en/stable/). I recommend creating a virtual environment with Python and these libraries to run this script. I've included two examples VCFs in the example_VCFs directory. One example has allele frequencies and the other has only genotypes. A Word document in that directory notes the derived allele frequencies that will be output by the program and summarizes the different derived allele frequency scenarios that I considered when writing the program.
+The annotation script uses two libraries: [pysam](https://pysam.readthedocs.io/en/latest/api.html) and [vcfpy](https://vcfpy.readthedocs.io/en/stable/). I recommend creating a virtual environment with Python and these libraries to run this script. I've included two examples VCFs in the [example_VCFs directory](https://github.com/brandcm/VCF_derived_allele_frequency_annotation/tree/main/example_VCFs). One example has allele frequencies and the other has only genotypes. A Word document in that directory notes the derived allele frequencies that will be output by the program and summarizes the different derived allele frequency scenarios that I considered when writing the program.
 
 Please reach out with any questions or comments: colin.brand@ucsf.edu.
 
-Notes:
+&nbsp;
+
+### Notes:
 - Chromosome/contig names must match between the ancestral FASTA sequence and VCF
 - Genotypes can be phased or unphased
 - Missing genotypes are recognized and derived allele frequency is calculated from the sum of non-missing alleles
@@ -19,9 +21,11 @@ Notes:
 - Ancestral allele calls are largely missing in telomeric regions of the genome
 - DAFs are calculated for both low- and high-confidence calls (see sequence convention below)
 
-Ancestral Allele Sequence Convention (per Ensembl):
-ACTG : high-confidence call, ancestral state supproted by the other two sequences
-actg : low-confindence call, ancestral state supported by one sequence only
-N    : failure, the ancestral state is not supported by any other sequence
--    : the extant species contains an insertion at this postion
+&nbsp;
+
+### Ancestral Allele Sequence Convention (per Ensembl):  
+ACTG : high-confidence call, ancestral state supproted by the other two sequences  
+actg : low-confindence call, ancestral state supported by one sequence only  
+N    : failure, the ancestral state is not supported by any other sequence  
+\-    : the extant species contains an insertion at this postion  
 .    : no coverage in the alignment
