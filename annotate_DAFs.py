@@ -32,14 +32,22 @@ def calculate_DAFs(variant, reference):
 	ancestral_allele = reference.fetch(variant.CHROM, variant.POS - 1, variant.POS)
 	ref_allele = str(variant.REF[0])
 
-	if ancestral_allele == '.' or ancestral_allele == '-':
+	DAF = '.'
+
+	if ancestral_allele == '.' or ancestral_allele == '-' or ancestral_allele == 'N':
 		alt_alleles = [alt.value for alt in variant.ALT]
 		DAF = '.'
 
 	else:
 		alt_alleles = [alt.value for alt in variant.ALT]
 
-		if len(alt_alleles) == 1:
+		if len(alt_alleles) == 0:
+			if ancestral_allele.upper() == ref_allele:
+				DAF = 0
+			else:
+				DAF = 1
+
+		elif len(alt_alleles) == 1:
 			alt_allele = variant.ALT[0].value
 
 			if 'AF' in variant.INFO:
