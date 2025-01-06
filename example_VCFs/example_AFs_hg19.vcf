@@ -1,0 +1,13 @@
+##fileformat=VCFv4.3
+##contig=<ID=chr22,length=50818468>
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Total number of alternate alleles in called genotypes">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Estimated allele frequency in the range (0,1)">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr22	16050075	.	A	G	30	PASS	AC=1;AF=0.01;AN=100
+chr22	16363303	.	G	T	30	PASS	AC=10;AF=0.1;AN=100
+chr22	18236956	.	G	A	30	PASS	AC=5;AF=0.05;AN=100
+chr22	18509086	.	A	T	30	PASS	AC=12;AF=0.12;AN=100
+chr22	20800700	.	C	A,T	30	PASS	AC=1,3;AF=0.01,0.03;AN=100
+chr22	28264974	.	G	A,T	30	PASS	AC=8,9;AF=0.08,0.09;AN=100
+chr22	35368282	.	G	A,C	30	PASS	AC=1,1;AF=0.01,0.01;AN=100
