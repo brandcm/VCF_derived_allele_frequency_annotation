@@ -6,7 +6,7 @@ The DAF is calculated for sites where the ancestral allele is not missing or amb
 ```
 python3 annotate_DAFs.py --fasta input.fa --vcf input.vcf --output out.vcf
 ```
-or this is ancestral alleles are annotated:
+or the ancestral alleles are annotated:
 ```
 python3 annotate_DAFs.py --AA_field AA --vcf input.vcf --output out.vcf
 ```
