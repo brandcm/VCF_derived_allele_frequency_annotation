@@ -8,50 +8,50 @@ python3 annotate_DAFs.py --fasta input.fa --vcf input.vcf --output out.vcf
 ```
 or the ancestral alleles are annotated:
 ```
-python3 annotate_DAFs.py --AA_field AA --vcf input.vcf --output out.vcf
+python3 annotate_DAFs.py --aa-field AA --vcf input.vcf --output out.vcf
 ```
 ## Optional Arguments
-Optional arguments include specifying the new INFO field name (default: DAF) and INFO field description (default: Derived allele frequency) using the `--DAF_field` and `--DAF_field_description` options, respectively. Enclose any new description in double quotes on the command line.
+Optional arguments include specifying the new INFO field name (default: DAF) and INFO field description (default: Derived allele frequency) using the `--daf-field` and `--daf-field-description` options, respectively. Enclose any new description in double quotes on the command line.
 
-One can also specify for which samples to calculate the DAF using the `--samples` or `--sample_file` options. The former takes a space-delimited string of sample names whereas the latter reads a text file where each line is a sample name. The script will use all samples when calculating a DAF by default.
+One can also specify for which samples to calculate the DAF using the `--samples` or `--sample-file` options. The former takes a space-delimited string of sample names whereas the latter reads a text file where each line is a sample name. The script will use all samples when calculating a DAF by default.
 
-Finally, one can specify the AF field to use to calculate DAFs using the `--AF_field` option. This is useful when multiple allele frequencies are annotated in a VCF, such as the superpopulation-specific allele frequencies in Thousand Genomes (AFR_AF, AMR_AF, EAS_AF, EUR_AF, SAS_AF).
+Finally, one can specify the AF field to use to calculate DAFs using the `--af-field` option. This is useful when multiple allele frequencies are annotated in a VCF, such as the superpopulation-specific allele frequencies in Thousand Genomes (AFR_AF, AMR_AF, EAS_AF, EUR_AF, SAS_AF).
 
 Script arguments are listed below.
 
 ```
---AA_field, type=str, default='AA', help=INFO field name with ancestral allele.
+--aa-field, type=str, default='AA', help=INFO field name with ancestral allele.
 
 --fasta, type=str, help=Path to input FASTA file with ancestral alleles.
 
 --vcf, type=str, required=True, help=Path to input VCF file for annotation. Requires AF INFO field or sample genotypes. DAF is calculated for all samples by default. Use the --samples or --sample_file options to specify individual samples.
 
---DAF_field, type=str, default='DAF', help=INFO field name for storing the derived allele frequency in the output VCF (default = DAF).
+--daf-field, type=str, default='DAF', help=INFO field name for storing the derived allele frequency in the output VCF (default = DAF).
 
---DAF_field_description, type=str, default='Derived allele frequency.', help=INFO field description for derived allele frequencty (default = Derived allele frequency). Enclose in double quotes.
+--daf-field-description, type=str, default='Derived allele frequency.', help=INFO field description for derived allele frequencty (default = Derived allele frequency). Enclose in double quotes.
 
---AF_field, type=str, default='AF', help=INFO field name to use for alternate allele frequencies (default = AF).
+--af-field, type=str, default='AF', help=INFO field name to use for alternate allele frequencies (default = AF).
 
 --samples, type=str, nargs='+', help=Space-delimited list of sample names for which to calculate DAF.
 
---sample_file, type=str, help=Path to file with one sample name per line for which to calculate DAF.
+--sample-file, type=str, help=Path to file with one sample name per line for which to calculate DAF.
 
 --output, type=str, required=True, help=Path to output file. Will overwrite if it exists.
 ```
 
 ## Updating Existing DAFs
-I have also included an additional script that one can use to update an existing DAF annotation, such as after genotype filtering, update_DAFs.py. The script requires the 1) input VCF (`--vcf`), 2) the annotation to update (`--update_field`), and 3) output VCF (`--output`). One can also use the `--samples` and `--sample_file` options above. If genotypes are not provided, this script will use allele count (AC) and allele number (AN) rather than allele frequency (AF) to update the DAF.
+I have also included an additional script that one can use to update an existing DAF annotation, such as after genotype filtering, update_DAFs.py. The script requires the 1) input VCF (`--vcf`), 2) the annotation to update (`--update-field`), and 3) output VCF (`--output`). One can also use the `--samples` and `--sample-file` options above. If genotypes are not provided, this script will use allele count (AC) and allele number (AN) rather than allele frequency (AF) to update the DAF.
 
 Script arguments are listed below.
 
 ```
 --vcf, type=str, required=True, help=Path to input VCF file for annotation. Requires AF INFO field or sample genotypes. DAF is calculated for all samples by default. Use the --samples or --sample_file options to specify individual samples.
 
---update_field, type=str, required=True, help=Name of the INFO field to update DAF.
+--update-field, type=str, required=True, help=Name of the INFO field to update DAF.
 
 --samples, type=str, nargs='+', help=Space-delimited list of sample names for which to calculate DAF.
 
---sample_file, type=str, help=Path to file with one sample name per line for which to calculate DAF.
+--sample-file, type=str, help=Path to file with one sample name per line for which to calculate DAF.
 
 --output, type=str, required=True, help=Path to output file. Will overwrite if it exists.
 ```
