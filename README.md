@@ -1,82 +1,184 @@
 # VCF Derived Allele Frequency Annotation
-This repository contains scripts and supporting files to annotate the derived allele frequency of genomic positions in a VCF file. Calculation of the derived allele frequency, or DAF, requires ancestral allele information. The current script functions by using existing annotations or fetching the ancestral allele from a FASTA file with these data. Typically, I use the [ancestral allele sequences](http://www.ensembl.org/info/genome/compara/ancestral_sequences.html) from the latest version of Ensembl for VCFs with variants mapped to GRCh38/hg38. Two scripts are included in the [download_ancestral_sequence directory](https://github.com/brandcm/VCF_derived_allele_frequency_annotation/blob/main/download_ancestral_sequence) to retrieve either the GRCh37/hg19 or GRCh38/hg38 ancestral sequences. Note that the hg19 sequence was last provided in Ensembl Release 75. I recommend bgzipping and indexing the retrieved file after using the retrieval script: `bgzip -i homo_sapiens_ancestor_*.fa`. These files may need editing for your application depending on the chromosome notation in your VCF ('22' vs 'chr22'). Alternatively, you can edit the sequence headers in the FASTA file directly. Note that unplaced contig IDs do not include the "chrUn" prefix.
 
-The DAF is calculated for sites where the ancestral allele is not missing or ambiguous (see ancestral allele sequence convention below). DAFs are calculated from either 1) allele frequency or 2) genotypes if allele frequency is not present. The resulting VCF contains one or two new annotations in the INFO field: 1) the ancestral allele call if not already provided and 2) the derived allele frequency for that genomic position. A simple command line prompt to annotate a VCF without ancestral allele calls would look like this:
+`annotate-dafs` annotates VCF files with derived allele frequencies (DAFs) using ancestral allele information and alternate allele frequencies.
 
-```
-python3 annotate_DAFs.py --fasta input.fa --vcf input.vcf --output out.vcf
-```
-or the ancestral alleles are annotated:
-```
-python3 annotate_DAFs.py --aa-field AA --vcf input.vcf --output out.vcf
-```
-## Optional Arguments
-Optional arguments include specifying the new INFO field name (default: DAF) and INFO field description (default: Derived allele frequency) using the `--daf-field` and `--daf-field-description` options, respectively. Enclose any new description in double quotes on the command line.
+Ancestral alleles can be provided either:
 
-One can also specify for which samples to calculate the DAF using the `--samples` or `--sample-file` options. The former takes a space-delimited string of sample names whereas the latter reads a text file where each line is a sample name. The script will use all samples when calculating a DAF by default.
+* in an existing VCF INFO field using `--aa-field`, or
+* from an ancestral FASTA sequence using `--fasta`.
 
-Finally, one can specify the AF field to use to calculate DAFs using the `--af-field` option. This is useful when multiple allele frequencies are annotated in a VCF, such as the superpopulation-specific allele frequencies in Thousand Genomes (AFR_AF, AMR_AF, EAS_AF, EUR_AF, SAS_AF).
+Alternate allele frequencies can be obtained from:
 
-Script arguments are listed below.
+1. an INFO field such as `AF` (default), using the VCF ALT alleles;
+2. genotypes for explicitly selected samples using `--samples` or `--sample-file`; or
+3. an INFO allele-frequency field paired with a corresponding INFO field containing the alternate alleles using `--af-field` and `--alts-field`.
 
-```
---aa-field, type=str, default='AA', help=INFO field name with ancestral allele.
+For GRCh38/hg38 VCFs, I typically use the [ancestral allele sequences](http://www.ensembl.org/info/genome/compara/ancestral_sequences.html) provided by Ensembl. Two scripts in the `download_ancestral_sequence` directory can retrieve ancestral sequences for GRCh37/hg19 or GRCh38/hg38. The hg19 sequence was last provided in Ensembl Release 75.
 
---fasta, type=str, help=Path to input FASTA file with ancestral alleles.
+After retrieving an ancestral FASTA, it can be bgzipped and indexed for use with `pysam`:
 
---vcf, type=str, required=True, help=Path to input VCF file for annotation. Requires AF INFO field or sample genotypes. DAF is calculated for all samples by default. Use the --samples or --sample_file options to specify individual samples.
-
---daf-field, type=str, default='DAF', help=INFO field name for storing the derived allele frequency in the output VCF (default = DAF).
-
---daf-field-description, type=str, default='Derived allele frequency.', help=INFO field description for derived allele frequencty (default = Derived allele frequency). Enclose in double quotes.
-
---af-field, type=str, default='AF', help=INFO field name to use for alternate allele frequencies (default = AF).
-
---samples, type=str, nargs='+', help=Space-delimited list of sample names for which to calculate DAF.
-
---sample-file, type=str, help=Path to file with one sample name per line for which to calculate DAF.
-
---output, type=str, required=True, help=Path to output file. Will overwrite if it exists.
+```bash
+bgzip -i homo_sapiens_ancestor_*.fa
 ```
 
-## Updating Existing DAFs
-I have also included an additional script that one can use to update an existing DAF annotation, such as after genotype filtering, update_DAFs.py. The script requires the 1) input VCF (`--vcf`), 2) the annotation to update (`--update-field`), and 3) output VCF (`--output`). One can also use the `--samples` and `--sample-file` options above. If genotypes are not provided, this script will use allele count (AC) and allele number (AN) rather than allele frequency (AF) to update the DAF.
+## Ancestral allele sequence convention
 
-Script arguments are listed below.
+When using an ancestral FASTA from Ensembl, ancestral allele calls follow the conventions described by Ensembl:
 
+| Character | Meaning |
+|---|---|
+| `A`, `C`, `T`, `G` | High-confidence ancestral allele call, supported by the other two sequences |
+| `a`, `c`, `t`, `g` | Low-confidence ancestral allele call, supported by one sequence |
+| `N` | Ancestral state is not supported by any other sequence |
+| `-` | The extant species contains an insertion at this position |
+| `.` | No coverage in the alignment |
+
+Both high- and low-confidence ancestral allele calls are accepted when calculating DAF. Missing or unresolved ancestral states are not annotated.
+
+## Installation
+
+Create a Python environment and install the package:
+
+```bash
+conda create -n annotate-dafs python=3.12
+conda activate annotate-dafs
+pip install .
 ```
---vcf, type=str, required=True, help=Path to input VCF file for annotation. Requires AF INFO field or sample genotypes. DAF is calculated for all samples by default. Use the --samples or --sample_file options to specify individual samples.
 
---update-field, type=str, required=True, help=Name of the INFO field to update DAF.
+For development, install the package in editable mode:
 
---samples, type=str, nargs='+', help=Space-delimited list of sample names for which to calculate DAF.
-
---sample-file, type=str, help=Path to file with one sample name per line for which to calculate DAF.
-
---output, type=str, required=True, help=Path to output file. Will overwrite if it exists.
+```bash
+pip install -e .
 ```
 
-## Requirements & Examples
-The annotation script uses two libraries: [pysam](https://pysam.readthedocs.io/en/latest/api.html) and [vcfpy](https://vcfpy.readthedocs.io/en/stable/). I recommend creating a virtual environment with Python and these libraries to run this script. I've included two examples VCFs in the [example_VCFs directory](https://github.com/brandcm/VCF_derived_allele_frequency_annotation/tree/main/example_VCFs). One example has allele frequencies and the other has only genotypes. A Word document in that directory notes the derived allele frequencies that will be output by the program and summarizes the different derived allele frequency scenarios that I considered when writing the program.
+## Basic usage
 
-Please reach out with any questions or comments: colin.brand@ucsf.edu.
+Using an ancestral allele INFO field:
 
-&nbsp;
+```bash
+annotate-dafs \
+	--aa-field AA \
+	--vcf input.vcf \
+	--output output.vcf
+```
 
-### Notes:
-- Chromosome/contig names must match between the ancestral FASTA sequence and VCF
-- Genotypes can be phased or unphased
-- Missing genotypes are recognized and derived allele frequency is calculated from the sum of non-missing alleles
-- VCFs are assumed to be "unsplit", i.e., multi-allelic positions are recorded on one rather than multiple lines
-- Ancestral allele calls are largely missing in telomeric regions of the genome
-- DAFs are calculated for both low- and high-confidence calls (see sequence convention below)
-- DAFs are calculated for positions included for any positions included in a VCF that are fixed for the reference allele (DAF = 0 if the ancestral allele is the reference allele, otherwise DAF = 1)
+Using an ancestral FASTA:
 
-&nbsp;
+```bash
+annotate-dafs \
+	--fasta ancestral.fa \
+	--vcf input.vcf \
+	--output output.vcf
+```
 
-### Ancestral Allele Sequence Convention (per Ensembl):  
-ACTG : high-confidence call, ancestral state supproted by the other two sequences  
-actg : low-confindence call, ancestral state supported by one sequence only  
-N    : failure, the ancestral state is not supported by any other sequence  
-\-    : the extant species contains an insertion at this postion  
-.    : no coverage in the alignment
+## Allele frequency sources
+
+By default, `annotate-dafs` uses the `AF` INFO field and the VCF ALT alleles.
+
+A different INFO field can be selected with `--af-field`:
+
+```bash
+annotate-dafs \
+    --aa-field AA \
+    --af-field EAS_AF \
+    --vcf input.vcf \
+    --output output.vcf
+```
+
+### Calculate allele frequencies from selected samples
+
+When `--samples` or `--sample-file` is provided, allele frequencies are calculated directly from the selected samples' genotypes rather than using an INFO AF field.
+
+For example:
+
+```bash
+annotate-dafs \
+	--aa-field AA \
+	--samples sample1 sample2 sample3 \
+	--vcf input.vcf \
+	--output output.vcf
+```
+
+Or provide one sample ID per line in a file:
+
+```bash
+annotate-dafs \
+	--aa-field AA \
+	--sample-file samples.txt \
+	--vcf input.vcf \
+	--output output.vcf
+```
+
+Phased and unphased genotypes are supported, and missing alleles are excluded from the frequency calculation.
+
+### Use alternate alleles from an INFO field
+
+Some VCFs contain allele frequencies corresponding to a set of alternate alleles that differs from the VCF ALT field. In this case, `--alts-field` can be used together with the corresponding `--af-field`.
+
+For example:
+
+```bash
+annotate-dafs \
+	--aa-field AA \
+	--af-field CUSTOM_AF \
+	--alts-field CUSTOM_ALTS \
+	--vcf input.vcf \
+	--output output.vcf
+```
+
+The alleles in `CUSTOM_ALTS` and frequencies in `CUSTOM_AF` are paired by position and must contain the same number of values. The VCF REF allele is assumed to be the reference allele for both representations.
+
+When samples are explicitly selected, genotype allele indices are interpreted against the VCF ALT field, so `--alts-field` is not used.
+
+## DAF calculation
+
+DAF is calculated by comparing the ancestral allele with the reference and alternate alleles at each variant.
+
+- When the **ancestral allele is the REF allele**, the ALT allele frequencies are reported as DAF.
+- When the **ancestral allele is an ALT allele**, that allele is assigned a DAF of 0, while the frequencies of the other ALT alleles are retained.
+- When the **ancestral allele does not match the REF or any ALT allele**, all ALT alleles are assigned a DAF of 1.0.
+- When the **ancestral allele is missing**, no DAF annotation is added.
+
+For example, a variant with `REF=A`, `ALT=G`, and `AF=0.10` produces:
+
+| Ancestral allele | DAF |
+|---|---:|
+| A | 0.10 |
+| G | 0.00 |
+
+For a multiallelic variant with `REF=A`, `ALT=G,T`, and `AF=0.10,0.20`:
+
+| Ancestral allele | DAF |
+|---|---|
+| A | 0.10, 0.20 |
+| G | 0.00, 0.20 |
+| T | 0.10, 0.00 |
+
+## Command-line options
+
+| Option | Description |
+|---|---|
+| `--aa-field` | INFO field containing the ancestral allele. Required when `--fasta` is not used. |
+| `--fasta` | FASTA file containing the ancestral sequence. Required when `--aa-field` is not used. |
+| `--exclude-low-confidence-ancestral` | Treat lowercase ancestral alleles from a FASTA as unresolved and skip DAF annotation. |
+| `--vcf` | Input VCF file to annotate. Required. |
+| `--output` | Output VCF file. Required and must differ from the input VCF. |
+| `--af-field` | INFO field containing alternate allele frequencies. Default: `AF`. |
+| `--alts-field` | INFO field containing alternate alleles corresponding to `--af-field`. |
+| `--samples` | Sample IDs whose genotypes should be used to calculate allele frequencies. |
+| `--sample-file` | File containing one sample ID per line whose genotypes should be used to calculate allele frequencies. |
+| `--daf-field` | INFO field name for the derived allele frequency annotation. Default: `DAF`. |
+| `--daf-field-description` | Description for the DAF INFO field. Default: `Derived allele frequency`. |
+| `--log-level` | Logging level: `DEBUG`, `INFO`, `WARNING`, or `ERROR`. Default: `INFO`. |
+
+Use `annotate-dafs --help` to display the complete command-line interface and available options.
+
+## Requirements and testing
+
+`annotate-dafs` requires Python 3.10 or later and uses [pysam](https://pysam.readthedocs.io/) and [vcfpy](https://vcfpy.readthedocs.io/).
+
+Tests can be run from the repository root with:
+
+```bash
+pytest -q
+```
