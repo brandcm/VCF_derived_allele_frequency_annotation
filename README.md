@@ -4,8 +4,8 @@
 
 Ancestral alleles can be provided either:
 
-* in an existing VCF INFO field using `--aa-field`, or
-* from an ancestral FASTA sequence using `--fasta`.
+- in an existing VCF INFO field using `--aa-field`, or
+- from an ancestral FASTA sequence using `--fasta`.
 
 Alternate allele frequencies can be obtained from:
 
@@ -13,27 +13,7 @@ Alternate allele frequencies can be obtained from:
 2. genotypes for explicitly selected samples using `--samples` or `--sample-file`; or
 3. an INFO allele-frequency field paired with a corresponding INFO field containing the alternate alleles using `--af-field` and `--alts-field`.
 
-For GRCh38/hg38 VCFs, I typically use the [ancestral allele sequences](http://www.ensembl.org/info/genome/compara/ancestral_sequences.html) provided by Ensembl. Two scripts in the `download_ancestral_sequence` directory can retrieve ancestral sequences for GRCh37/hg19 or GRCh38/hg38. The hg19 sequence was last provided in Ensembl Release 75.
-
-After retrieving an ancestral FASTA, it can be bgzipped and indexed for use with `pysam`:
-
-```bash
-bgzip -i homo_sapiens_ancestor_*.fa
-```
-
-## Ancestral allele sequence convention
-
-When using an ancestral FASTA from Ensembl, ancestral allele calls follow the conventions described by Ensembl:
-
-| Character | Meaning |
-|---|---|
-| `A`, `C`, `T`, `G` | High-confidence ancestral allele call, supported by the other two sequences |
-| `a`, `c`, `t`, `g` | Low-confidence ancestral allele call, supported by one sequence |
-| `N` | Ancestral state is not supported by any other sequence |
-| `-` | The extant species contains an insertion at this position |
-| `.` | No coverage in the alignment |
-
-Both high- and low-confidence ancestral allele calls are accepted when calculating DAF. Missing or unresolved ancestral states are not annotated.
+The package can also download and prepare the ancestral sequence FASTAs provided by Ensembl for GRCh37/hg19 and GRCh38/hg38.
 
 ## Installation
 
@@ -51,34 +31,122 @@ For development, install the package in editable mode:
 pip install -e .
 ```
 
-## Basic usage
+## Download ancestral sequences
 
-Using an ancestral allele INFO field:
+Ensembl ancestral sequences can be downloaded and prepared directly with the `download-ancestral` command.
+
+For GRCh37/hg19:
 
 ```bash
-annotate-dafs \
-	--aa-field AA \
-	--vcf input.vcf \
-	--output output.vcf
+annotate-dafs download-ancestral \
+    --assembly GRCh37 \
+    --output-dir ~/ancestral_sequences
 ```
 
-Using an ancestral FASTA:
+The GRCh37 ancestral sequence is retrieved from Ensembl release 75, the last Ensembl release providing the GRCh37 ancestral sequence.
+
+For GRCh38/hg38, specify the Ensembl release:
 
 ```bash
-annotate-dafs \
-	--fasta ancestral.fa \
-	--vcf input.vcf \
-	--output output.vcf
+annotate-dafs download-ancestral \
+    --assembly GRCh38 \
+    --release <release> \
+    --output-dir ~/ancestral_sequences
+```
+
+The output directory is created automatically if it does not already exist. The command downloads the Ensembl ancestral sequence archive, combines the individual FASTA files, normalizes Ensembl sequence headers, BGZF-compresses the resulting FASTA, and creates the indexes required by `pysam`.
+
+For GRCh37, the resulting files are:
+
+```text
+homo_sapiens_ancestor_GRCh37.fa.gz
+homo_sapiens_ancestor_GRCh37.fa.gz.fai
+homo_sapiens_ancestor_GRCh37.fa.gz.gzi
+```
+
+Existing output files are not overwritten by default. Use `--force` to replace them.
+
+Ensembl ancestral FASTA headers such as:
+
+```text
+ANCESTOR_for_chromosome:GRCh37:22:1:51304566:1
+```
+
+are normalized to their sequence identifier:
+
+```text
+22
+```
+
+Supercontig identifiers are similarly retained in normalized form, for example `GL000191.1`.
+
+## Ancestral allele sequence convention
+
+Ancestral allele calls from Ensembl follow the following conventions:
+
+| Character | Meaning |
+|---|---|
+| `A`, `C`, `T`, `G` | High-confidence ancestral allele call |
+| `a`, `c`, `t`, `g` | Low-confidence ancestral allele call |
+| `N` | Ancestral state is unresolved |
+| `-` | The extant species contains an insertion at this position |
+| `.` | No coverage in the alignment |
+
+By default, both high- and low-confidence ancestral allele calls are accepted when calculating DAF. Lowercase calls are converted to uppercase in the output.
+
+Use `--exclude-low-confidence-ancestral` to treat lowercase ancestral alleles as unresolved:
+
+```bash
+annotate-dafs annotate \
+    --fasta ~/ancestral_sequences/homo_sapiens_ancestor_GRCh37.fa.gz \
+    --exclude-low-confidence-ancestral \
+    --vcf input.vcf \
+    --output output.vcf
+```
+
+Missing or unresolved ancestral states (`N`, `-`, or `.`) are not annotated.
+
+FASTA-based ancestral allele retrieval currently supports SNVs only.
+
+## Basic usage
+
+### Using an ancestral allele INFO field
+
+```bash
+annotate-dafs annotate \
+    --aa-field AA \
+    --vcf input.vcf \
+    --output output.vcf
+```
+
+### Using an ancestral FASTA
+
+```bash
+annotate-dafs annotate \
+    --fasta ~/ancestral_sequences/homo_sapiens_ancestor_GRCh37.fa.gz \
+    --vcf input.vcf \
+    --output output.vcf
+```
+
+Chromosome names with and without a leading `chr` prefix are supported when matching VCF chromosomes to FASTA sequences. For example, VCF chromosome `chr22` can be matched to FASTA sequence `22`.
+
+When a resolved ancestral allele is retrieved from a FASTA and DAF is successfully calculated, the ancestral allele used for the calculation is written to the output VCF `AA` INFO field. An existing `AA` value is replaced by the FASTA-derived allele for that variant.
+
+The corresponding INFO definitions are:
+
+```text
+##INFO=<ID=AA,Number=1,Type=String,Description="Ancestral allele used to calculate DAF">
+##INFO=<ID=DAF,Number=A,Type=Float,Description="Derived allele frequency">
 ```
 
 ## Allele frequency sources
 
-By default, `annotate-dafs` uses the `AF` INFO field and the VCF ALT alleles.
+By default, `annotate-dafs annotate` uses the `AF` INFO field and the VCF ALT alleles.
 
 A different INFO field can be selected with `--af-field`:
 
 ```bash
-annotate-dafs \
+annotate-dafs annotate \
     --aa-field AA \
     --af-field EAS_AF \
     --vcf input.vcf \
@@ -92,21 +160,21 @@ When `--samples` or `--sample-file` is provided, allele frequencies are calculat
 For example:
 
 ```bash
-annotate-dafs \
-	--aa-field AA \
-	--samples sample1 sample2 sample3 \
-	--vcf input.vcf \
-	--output output.vcf
+annotate-dafs annotate \
+    --aa-field AA \
+    --samples sample1 sample2 sample3 \
+    --vcf input.vcf \
+    --output output.vcf
 ```
 
 Or provide one sample ID per line in a file:
 
 ```bash
-annotate-dafs \
-	--aa-field AA \
-	--sample-file samples.txt \
-	--vcf input.vcf \
-	--output output.vcf
+annotate-dafs annotate \
+    --aa-field AA \
+    --sample-file samples.txt \
+    --vcf input.vcf \
+    --output output.vcf
 ```
 
 Phased and unphased genotypes are supported, and missing alleles are excluded from the frequency calculation.
@@ -118,12 +186,12 @@ Some VCFs contain allele frequencies corresponding to a set of alternate alleles
 For example:
 
 ```bash
-annotate-dafs \
-	--aa-field AA \
-	--af-field CUSTOM_AF \
-	--alts-field CUSTOM_ALTS \
-	--vcf input.vcf \
-	--output output.vcf
+annotate-dafs annotate \
+    --aa-field AA \
+    --af-field CUSTOM_AF \
+    --alts-field CUSTOM_ALTS \
+    --vcf input.vcf \
+    --output output.vcf
 ```
 
 The alleles in `CUSTOM_ALTS` and frequencies in `CUSTOM_AF` are paired by position and must contain the same number of values. The VCF REF allele is assumed to be the reference allele for both representations.
@@ -137,7 +205,7 @@ DAF is calculated by comparing the ancestral allele with the reference and alter
 - When the **ancestral allele is the REF allele**, the ALT allele frequencies are reported as DAF.
 - When the **ancestral allele is an ALT allele**, that allele is assigned a DAF of 0, while the frequencies of the other ALT alleles are retained.
 - When the **ancestral allele does not match the REF or any ALT allele**, all ALT alleles are assigned a DAF of 1.0.
-- When the **ancestral allele is missing**, no DAF annotation is added.
+- When the **ancestral allele is missing or unresolved**, no DAF annotation is added.
 
 For example, a variant with `REF=A`, `ALT=G`, and `AF=0.10` produces:
 
@@ -156,6 +224,15 @@ For a multiallelic variant with `REF=A`, `ALT=G,T`, and `AF=0.10,0.20`:
 
 ## Command-line options
 
+`annotate-dafs` provides two subcommands:
+
+```text
+annotate
+download-ancestral
+```
+
+### `annotate`
+
 | Option | Description |
 |---|---|
 | `--aa-field` | INFO field containing the ancestral allele. Required when `--fasta` is not used. |
@@ -171,11 +248,29 @@ For a multiallelic variant with `REF=A`, `ALT=G,T`, and `AF=0.10,0.20`:
 | `--daf-field-description` | Description for the DAF INFO field. Default: `Derived allele frequency`. |
 | `--log-level` | Logging level: `DEBUG`, `INFO`, `WARNING`, or `ERROR`. Default: `INFO`. |
 
-Use `annotate-dafs --help` to display the complete command-line interface and available options.
+### `download-ancestral`
+
+| Option | Description |
+|---|---|
+| `--assembly` | Genome assembly: `GRCh37` or `GRCh38`. Required. |
+| `--release` | Ensembl release. Required for GRCh38 and not permitted for GRCh37. |
+| `--output-dir` | Directory in which the prepared ancestral FASTA and indexes are written. Required. |
+| `--force` | Overwrite existing ancestral FASTA output files. |
+| `--log-level` | Logging level: `DEBUG`, `INFO`, `WARNING`, or `ERROR`. Default: `INFO`. |
+
+Use:
+
+```bash
+annotate-dafs --help
+annotate-dafs annotate --help
+annotate-dafs download-ancestral --help
+```
+
+to display the complete command-line interface.
 
 ## Requirements and testing
 
-`annotate-dafs` requires Python 3.10 or later and uses [pysam](https://pysam.readthedocs.io/) and [vcfpy](https://vcfpy.readthedocs.io/).
+`annotate-dafs` requires Python 3.10 or later and uses `pysam` and `vcfpy`.
 
 Tests can be run from the repository root with:
 
