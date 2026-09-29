@@ -1,6 +1,6 @@
-# VCF Derived Allele Frequency Annotation
+# annotate-dafs
 
-`annotate-dafs` annotates VCF files with derived allele frequencies (DAFs) using ancestral allele information and alternate allele frequencies.
+`annotate-dafs` is a Python command-line tool for annotating VCF files with derived allele frequencies (DAFs) using ancestral allele information and alternate allele frequencies.
 
 Ancestral alleles can be provided either:
 
@@ -13,7 +13,9 @@ Alternate allele frequencies can be obtained from:
 2. genotypes for explicitly selected samples using `--samples` or `--sample-file`; or
 3. an INFO allele-frequency field paired with a corresponding INFO field containing the alternate alleles using `--af-field` and `--alts-field`.
 
-The package can also download and prepare the ancestral sequence FASTAs provided by Ensembl for GRCh37/hg19 and GRCh38/hg38.
+The package can also download and prepare the **human ancestral sequence FASTAs** provided by Ensembl for GRCh37/hg19 and GRCh38/hg38. These ancestral sequences are inferred by Ensembl Compara from primate EPO multiple-sequence alignments using Ortheus.
+
+The downloaded FASTAs are therefore specifically the Ensembl ancestral sequences provided for the human reference assemblies. `annotate-dafs annotate` itself is not restricted to human data and can use a user-provided ancestral FASTA for other systems, provided that its sequence names and coordinates correspond to the input VCF.
 
 ## Installation
 
@@ -32,6 +34,18 @@ pip install -e .
 ```
 
 ## Download ancestral sequences
+
+### Ensembl ancestral sequence provenance
+
+Ensembl ancestral sequences are inferred from Enredo-Pecan-Ortheus (EPO) multiple-sequence alignments. Ortheus uses the phylogenetic relationships among aligned genomes to infer ancestral sequences at internal nodes of the species tree.
+
+The human ancestral sequence distributed for GRCh37 is based on Ensembl's 6-primate EPO alignment, which includes human, chimpanzee, gorilla, orangutan, macaque, and marmoset. The downloaded FASTA represents ancestral sequence calls mapped to the human reference coordinate system; it is not a reconstructed genome from a single ancestral species.
+
+The `download-ancestral` command currently downloads the human ancestral sequence resources distributed by Ensembl. The `annotate` command is more general and can instead use an appropriate user-supplied ancestral FASTA for other organisms or reference systems.
+
+For additional information, see the Ensembl documentation on ancestral sequences and multiple-genome alignments.
+
+### Download and prepare the FASTA
 
 Ensembl ancestral sequences can be downloaded and prepared directly with the `download-ancestral` command.
 
@@ -82,7 +96,7 @@ Supercontig identifiers are similarly retained in normalized form, for example `
 
 ## Ancestral allele sequence convention
 
-Ancestral allele calls from Ensembl follow the following conventions:
+Ancestral allele calls from Ensembl use the following conventions:
 
 | Character | Meaning |
 |---|---|
@@ -277,3 +291,13 @@ Tests can be run from the repository root with:
 ```bash
 pytest -q
 ```
+
+## References
+
+- [Ensembl ancestral sequences](https://grch37.ensembl.org/info/genome/compara/ancestral_sequences.html)
+- [Ensembl release 75](https://www.ebi.ac.uk/about/news/updates-from-data-resources/ensembl-75/)
+- [Ensembl multiple genome alignments](https://www.ensembl.org/info/genome/compara/multiple_genome_alignments.html)
+
+## License
+
+`annotate-dafs` is distributed under the MIT License. See [LICENSE](LICENSE) for details.

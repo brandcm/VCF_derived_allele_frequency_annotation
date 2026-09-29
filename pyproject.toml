@@ -1,14 +1,19 @@
 [project]
 name = "annotate-dafs"
 version = "0.1.0"
-description = "Annotate VCF files with derived allele frequencies."
+description = "Annotate VCF files with derived allele frequencies using ancestral allele information."
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
 
 dependencies = [
-	"pysam",
-	"vcfpy",
+    "pysam",
+    "vcfpy",
 ]
+
+[project.urls]
+Repository = "https://github.com/brandcm/annotate-dafs"
+Issues = "https://github.com/brandcm/annotate-dafs/issues"
 
 [project.scripts]
 annotate-dafs = "annotate_dafs.cli:main"
