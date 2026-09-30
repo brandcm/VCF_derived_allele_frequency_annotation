@@ -1,5 +1,7 @@
 # annotate-dafs
 
+[![Tests](https://github.com/brandcm/annotate-dafs/actions/workflows/tests.yml/badge.svg)](https://github.com/brandcm/annotate-dafs/actions/workflows/tests.yml)
+
 `annotate-dafs` is a Python command-line tool for annotating VCF files with derived allele frequencies (DAFs) using ancestral allele information and alternate allele frequencies.
 
 Ancestral alleles can be provided either:
